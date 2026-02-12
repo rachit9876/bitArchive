@@ -3,10 +3,10 @@
 Get your personal private image vault with cloud support to store old or less frequently used images such as screenshots, memes, and more. You can also use it to securely store your private images. 
 
 <a href="https://github.com/rachit9876/bitArchive/releases/latest/download/bitArchive.apk">
-  <img src="https://cdn-public.pages.dev/public/7306f2977d10.png" width="80">
+  <img src="https://cdn-public.pages.dev/public/7306f2977d10.png" width="60">
 </a>
 
-[![Download](https://img.shields.io/badge/Download-Now-purple?style=for-the-badge&logo=github)](https://github.com/rachit9876/bitArchive/releases/latest/download/bitArchive.apk)
+[![Download](https://img.shields.io/badge/Download-APK-purple?style=for-the-badge&logo=github)](https://github.com/rachit9876/bitArchive/releases/latest/download/bitArchive.apk)
 
 ## Prerequisites
 - Node.js, JDK 17, Android Studio with SDK
