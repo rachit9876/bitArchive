@@ -1,20 +1,24 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { ImageIcon } from '../components/Icons';
 import styles from '../styles';
 
-const GridItem = memo(function GridItem({ item, onOpen }) {
+const BLUR_IMAGE = require('../../assets/blur.jpeg');
+
+const GridItem = memo(function GridItem({ item, onOpen, shouldBlur }) {
+  const source = shouldBlur ? BLUR_IMAGE : { uri: item.url };
   return (
     <Pressable
       style={styles.gridItem}
       onPress={() => onOpen(item)}
       android_ripple={{ color: 'rgba(255,255,255,0.15)' }}
     >
-      <Image source={{ uri: item.url }} style={styles.gridImage} />
+      <Image source={source} style={styles.gridImage} />
     </Pressable>
   );
 });
+
 
 const EmptySkeleton = memo(function EmptySkeleton() {
   return (
@@ -26,11 +30,29 @@ const EmptySkeleton = memo(function EmptySkeleton() {
   );
 });
 
-const GalleryScreen = ({ images, refreshing, onRefresh, onOpen }) => {
+const GalleryScreen = ({ images, refreshing, onRefresh, onOpen, safetyBlur = true }) => {
   const theme = useTheme();
-  const renderItem = useCallback(
-    ({ item }) => <GridItem item={item} onOpen={onOpen} />,
+  const [revealed, setRevealed] = useState({});
+
+  const revealedSet = useMemo(() => revealed, [revealed]);
+
+  const handleOpen = useCallback(
+    item => {
+      setRevealed(prev => ({ ...prev, [item.name]: true }));
+      onOpen(item);
+    },
     [onOpen]
+  );
+
+  const renderItem = useCallback(
+    ({ item }) => (
+      <GridItem
+        item={item}
+        onOpen={handleOpen}
+        shouldBlur={Boolean(safetyBlur) && !revealedSet[item.name]}
+      />
+    ),
+    [handleOpen, revealedSet, safetyBlur]
   );
 
   return (

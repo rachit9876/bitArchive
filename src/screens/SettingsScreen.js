@@ -241,7 +241,28 @@ const SettingsScreen = ({
         </Card.Content>
       </Card>
 
-      {/* ── Storage ── */}
+      {/* ── Safety Blur ── */}
+      <Card style={styles.cardSpacing}>
+        <Card.Title title="Safety Blur" />
+        <Card.Content>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text>Blur images in gallery</Text>
+            <Button
+              mode={draft.safetyBlur ? 'contained' : 'outlined'}
+              onPress={async () => {
+                const nextDraft = { ...draft, safetyBlur: !draft.safetyBlur };
+                setDraft(nextDraft);
+                await onUpdate(nextDraft);
+              }}
+            >
+              {draft.safetyBlur ? 'On' : 'Off'}
+            </Button>
+          </View>
+          <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
+            When enabled, images in the gallery are blurred until clicked.
+          </Text>
+        </Card.Content>
+      </Card>
       <Card style={styles.cardSpacing}>
         <Card.Title title="Storage" />
         <Card.Content>

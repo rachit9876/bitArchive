@@ -52,6 +52,7 @@ import {
   githubRequest,
   listPublicImages,
 } from './src/services/github';
+import { initialConfig } from './src/constants';
 import {
   buildFilenameFromPayload,
   payloadFromUri,
@@ -556,7 +557,7 @@ export default function App() {
       try {
         const stored = await loadConfig();
         if (stored) {
-          setConfig(stored);
+          setConfig({ ...initialConfig, ...stored });
         }
       } finally {
         setConfigLoading(false);
@@ -605,15 +606,17 @@ export default function App() {
   }, []);
 
   const handleCompleteSetup = async nextConfig => {
-    setConfig(nextConfig);
-    await saveConfig(nextConfig);
+    const mergedConfig = { ...initialConfig, ...nextConfig };
+    setConfig(mergedConfig);
+    await saveConfig(mergedConfig);
   };
 
   const handleUpdateConfig = async nextConfig => {
+    const mergedConfig = { ...initialConfig, ...nextConfig };
     const previousRepo = config?.repo;
-    setConfig(nextConfig);
-    await saveConfig(nextConfig);
-    if (previousRepo && previousRepo !== nextConfig.repo) {
+    setConfig(mergedConfig);
+    await saveConfig(mergedConfig);
+    if (previousRepo && previousRepo !== mergedConfig.repo) {
       await clearDuplicateIndex(previousRepo);
       setKnownFileNames([]);
     }
@@ -758,6 +761,7 @@ export default function App() {
                     );
                     setSelectedIndex(index >= 0 ? index : 0);
                   }}
+                  safetyBlur={config?.safetyBlur}
                 />
               )}
               {screen === 'upload' && (
