@@ -326,7 +326,7 @@ const SettingsScreen = ({
       <Card style={{ marginBottom: 24 }}>
         <Card.Title title="About" />
         <Card.Content>
-          <Text style={{ opacity: 0.6 }}>Bit Archive v1.0.0</Text>
+          <Text style={{ opacity: 0.6 }}>Bit Archive v1.1.0</Text>
           <Divider style={styles.topSpacing} />
           <Text style={[styles.hint, { textAlign: 'left' }]}>
             Private image archive powered by GitHub. Your images are stored in a
