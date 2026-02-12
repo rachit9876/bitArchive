@@ -1,4 +1,9 @@
-# 📱 Bit Archive - Android Build
+# Bit Archive – Android Build
+
+Get your personal private image vault with cloud support to store old or less frequently used images such as screenshots, memes, and more. You can also use it to securely store your private images. 
+
+[![Download](https://img.shields.io/badge/Download-Now-purple?style=for-the-badge&logo=github)](https://github.com/drspacelove/bitArchive/releases)
+
 
 ## Prerequisites
 - Node.js, JDK 17, Android Studio with SDK
