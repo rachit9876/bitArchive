@@ -38,6 +38,24 @@ const getCachePath = (filename, sha, extension) => {
   return `${CACHE_DIR}${base}${suffix}`;
 };
 
+const mapWithConcurrency = async (items, worker, concurrency = 6) => {
+  if (!items.length) return [];
+  const limit = Math.max(1, Math.min(concurrency, items.length));
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  const runWorker = async () => {
+    while (nextIndex < items.length) {
+      const current = nextIndex;
+      nextIndex += 1;
+      results[current] = await worker(items[current], current);
+    }
+  };
+
+  await Promise.all(Array.from({ length: limit }, () => runWorker()));
+  return results;
+};
+
 export const githubRequest = async (config, path, options = {}) => {
   const url = getGithubApiUrl(config, path);
   const response = await fetch(url, {
@@ -153,8 +171,9 @@ export const listPublicImages = async config => {
     }))
     .filter(item => SUPPORTED_EXTS.includes(item.extension));
 
-  const images = await Promise.all(
-    candidates.map(async item => {
+  const images = await mapWithConcurrency(
+    candidates,
+    async item => {
       const displayUrl = await cacheImageFromGithub(
         config,
         item.name,
@@ -169,7 +188,8 @@ export const listPublicImages = async config => {
         size: item.size,
         extension: item.extension,
       };
-    })
+    },
+    4
   );
 
   return images;

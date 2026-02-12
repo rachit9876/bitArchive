@@ -1,36 +1,54 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { ImageIcon } from '../components/Icons';
 import styles from '../styles';
 
+const GridItem = memo(function GridItem({ item, onOpen }) {
+  return (
+    <Pressable
+      style={styles.gridItem}
+      onPress={() => onOpen(item)}
+      android_ripple={{ color: 'rgba(255,255,255,0.15)' }}
+    >
+      <Image source={{ uri: item.url }} style={styles.gridImage} />
+    </Pressable>
+  );
+});
+
+const EmptySkeleton = memo(function EmptySkeleton() {
+  return (
+    <View style={[styles.grid, { flexDirection: 'row', flexWrap: 'wrap' }]}> 
+      {Array.from({ length: 9 }).map((_, index) => (
+        <View key={`grid-skeleton-${index}`} style={[styles.gridItem, styles.skeleton]} />
+      ))}
+    </View>
+  );
+});
+
 const GalleryScreen = ({ images, refreshing, onRefresh, onOpen }) => {
   const theme = useTheme();
+  const renderItem = useCallback(
+    ({ item }) => <GridItem item={item} onOpen={onOpen} />,
+    [onOpen]
+  );
 
   return (
     <FlatList
       data={images}
       keyExtractor={item => item.name}
       numColumns={3}
-      contentContainerStyle={styles.grid}
-      contentContainerStyleGrow={{ flex: 1 }}
+      contentContainerStyle={[styles.grid, images.length === 0 ? { flexGrow: 1 } : null]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      renderItem={({ item }) => (
-        <Pressable
-          style={styles.gridItem}
-          onPress={() => onOpen(item)}
-          android_ripple={{ color: 'rgba(255,255,255,0.15)' }}
-        >
-          <Image source={{ uri: item.url }} style={styles.gridImage} />
-        </Pressable>
-      )}
+      renderItem={renderItem}
+      initialNumToRender={18}
+      maxToRenderPerBatch={12}
+      windowSize={9}
+      updateCellsBatchingPeriod={50}
+      removeClippedSubviews
       ListEmptyComponent={
         refreshing ? (
-          <View style={[styles.grid, { flexDirection: 'row', flexWrap: 'wrap' }]}>
-            {Array.from({ length: 9 }).map((_, index) => (
-              <View key={`grid-skeleton-${index}`} style={[styles.gridItem, styles.skeleton]} />
-            ))}
-          </View>
+          <EmptySkeleton />
         ) : (
           <View style={styles.emptyState}>
             <ImageIcon size={48} color={theme.colors.onSurface + '55'} />

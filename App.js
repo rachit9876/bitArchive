@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -193,6 +193,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('newest'); // 'newest' or 'oldest'
   const [knownFileNames, setKnownFileNames] = useState([]);
+  const duplicateIndexSaveTimer = useRef(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   /* ─── Derived state ──── */
@@ -578,7 +579,19 @@ export default function App() {
 
   useEffect(() => {
     if (!config?.repo) return;
-    saveDuplicateIndex(config.repo, knownFileNames);
+    if (duplicateIndexSaveTimer.current) {
+      clearTimeout(duplicateIndexSaveTimer.current);
+    }
+    duplicateIndexSaveTimer.current = setTimeout(() => {
+      saveDuplicateIndex(config.repo, knownFileNames);
+    }, 400);
+
+    return () => {
+      if (duplicateIndexSaveTimer.current) {
+        clearTimeout(duplicateIndexSaveTimer.current);
+        duplicateIndexSaveTimer.current = null;
+      }
+    };
   }, [config?.repo, knownFileNames, saveDuplicateIndex]);
 
   useEffect(() => {
