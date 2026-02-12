@@ -19,6 +19,7 @@ import {
   MD3DarkTheme,
   MD3LightTheme,
   PaperProvider,
+  Portal,
   Snackbar,
   Text,
   TextInput,
@@ -26,6 +27,7 @@ import {
 } from 'react-native-paper';
 import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system/legacy';
 import ShareMenu from 'react-native-share-menu';
 import GalleryScreen from './src/screens/GalleryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -565,13 +567,16 @@ export default function App() {
               edges={['top', 'bottom']}
             >
               <SetupScreen onComplete={handleCompleteSetup} onMessage={showMessage} />
-              <Snackbar
-                visible={Boolean(snackbar)}
-                onDismiss={() => setSnackbar('')}
-                duration={3000}
-              >
-                {snackbar}
-              </Snackbar>
+              <Portal>
+                <Snackbar
+                  visible={Boolean(snackbar)}
+                  onDismiss={() => setSnackbar('')}
+                  duration={3000}
+                  style={{ marginBottom: 80 }}
+                >
+                  {snackbar}
+                </Snackbar>
+              </Portal>
             </SafeAreaView>
           </SafeAreaProvider>
         </PaperProvider>
@@ -803,6 +808,41 @@ export default function App() {
                         mode="outlined"
                         textColor="#CFBCFF"
                         onPress={async () => {
+                          try {
+                            const localUri = await ensureLocalUri(selectedImage);
+                            if (!localUri) {
+                              showMessage('Could not download image.');
+                              return;
+                            }
+                            let base64;
+                            if (localUri.startsWith('data:')) {
+                              // Data URI — extract base64 part
+                              base64 = localUri.split(',')[1];
+                            } else {
+                              base64 = await FileSystem.readAsStringAsync(localUri, {
+                                encoding: 'base64',
+                              });
+                            }
+                            if (!base64) {
+                              showMessage('Could not read image data.');
+                              return;
+                            }
+                            await Clipboard.setImageAsync(base64);
+                            showMessage('Image copied to clipboard.');
+                          } catch (e) {
+                            console.warn('Copy image error:', e);
+                            showMessage('Copy failed: ' + (e.message || 'Unknown error'));
+                          }
+                        }}
+                        icon={() => <CopyIcon size={16} color="#CFBCFF" />}
+                      >
+                        Copy
+                      </Button>
+
+                      <Button
+                        mode="outlined"
+                        textColor="#CFBCFF"
+                        onPress={async () => {
                           if (await Sharing.isAvailableAsync()) {
                             const localUri =
                               await ensureLocalUri(selectedImage);
@@ -828,16 +868,27 @@ export default function App() {
                   </>
                 )}
               </View>
+              {/* Snackbar inside Modal (RN Modal has its own native layer) */}
+              <Snackbar
+                visible={Boolean(snackbar)}
+                onDismiss={() => setSnackbar('')}
+                duration={3000}
+                style={{ position: 'absolute', bottom: 30, left: 16, right: 16 }}
+              >
+                {snackbar}
+              </Snackbar>
             </Modal>
 
-            {/* ─ Snackbar ─ */}
-            <Snackbar
-              visible={Boolean(snackbar)}
-              onDismiss={() => setSnackbar('')}
-              duration={3000}
-            >
-              {snackbar}
-            </Snackbar>
+            <Portal>
+              <Snackbar
+                visible={Boolean(snackbar)}
+                onDismiss={() => setSnackbar('')}
+                duration={3000}
+                style={{ marginBottom: 80 }}
+              >
+                {snackbar}
+              </Snackbar>
+            </Portal>
           </SafeAreaView>
         </SafeAreaProvider>
       </PaperProvider>
