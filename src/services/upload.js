@@ -158,7 +158,6 @@ export const pickImageFromLibrary = async onMessage => {
   }
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
-    base64: true,
     quality: 1,
     allowsMultipleSelection: true,
     selectionLimit: 0,
@@ -176,7 +175,6 @@ export const pickImageFromCamera = async onMessage => {
     return null;
   }
   const result = await ImagePicker.launchCameraAsync({
-    base64: true,
     quality: 1,
   });
   if (result.canceled) return null;
