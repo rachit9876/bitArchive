@@ -53,6 +53,7 @@ import {
   listPublicImages,
 } from './src/services/github';
 import {
+  buildFilenameFromPayload,
   payloadFromUri,
   pickImageFromLibrary,
   pickImageFromCamera,
@@ -170,7 +171,14 @@ function BottomTabBar({ active, onChange }) {
 export default function App() {
   const colorScheme = useColorScheme();
   const theme = useMemo(() => (colorScheme === 'dark' ? darkTheme : lightTheme), [colorScheme]);
-  const { loadConfig, saveConfig, clearConfig } = useConfigStorage();
+  const {
+    loadConfig,
+    saveConfig,
+    clearConfig,
+    loadDuplicateIndex,
+    saveDuplicateIndex,
+    clearDuplicateIndex,
+  } = useConfigStorage();
   const [config, setConfig] = useState(null);
   const [configLoading, setConfigLoading] = useState(true);
   const [screen, setScreen] = useState('gallery');
@@ -184,6 +192,7 @@ export default function App() {
   const [pendingShare, setPendingShare] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('newest'); // 'newest' or 'oldest'
+  const [knownFileNames, setKnownFileNames] = useState([]);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   /* ─── Derived state ──── */
@@ -222,6 +231,9 @@ export default function App() {
     try {
       const list = await listPublicImages(config);
       setImages(list);
+      setKnownFileNames(prev =>
+        Array.from(new Set([...prev, ...list.map(item => item.name)]))
+      );
     } catch (error) {
       showMessage(error.message || 'Failed to refresh images.');
     } finally {
@@ -230,7 +242,10 @@ export default function App() {
   }, [config]);
 
   const handleAddImage = useCallback(image => {
-    setImages(prev => [image, ...prev]);
+    setImages(prev => [image, ...prev.filter(item => item.name !== image.name)]);
+    setKnownFileNames(prev =>
+      prev.includes(image.name) ? prev : [...prev, image.name]
+    );
   }, []);
 
   const uploadPayloads = useCallback(
@@ -238,13 +253,47 @@ export default function App() {
       const { manageLoading = true } = options;
       let uploaded = 0;
       let existed = 0;
+      const existingByName = new Map(images.map(image => [image.name, image]));
+      const knownNames = new Set([...knownFileNames, ...images.map(image => image.name)]);
       if (manageLoading) {
         setUploading(true);
       }
       try {
         for (const item of payloads) {
+          const expectedName = buildFilenameFromPayload(item);
+          if (knownNames.has(expectedName)) {
+            const localExisting = existingByName.get(expectedName);
+            if (localExisting) {
+              handleAddImage(localExisting);
+              uploaded += 1;
+              existed += 1;
+              continue;
+            }
+
+            try {
+              const localUri = await cacheImageFromGithub(config, expectedName, item.extension);
+              const inferred = {
+                name: expectedName,
+                url: localUri,
+                localUri,
+                sha: null,
+                size: item.size,
+                extension: item.extension,
+              };
+              handleAddImage(inferred);
+              existingByName.set(inferred.name, inferred);
+              uploaded += 1;
+              existed += 1;
+              continue;
+            } catch {
+              // stale index entry; continue with upload fallback
+            }
+          }
+
           const result = await uploadImageBase64({ ...item, config });
           handleAddImage(result.image);
+          existingByName.set(result.image.name, result.image);
+          knownNames.add(result.image.name);
           uploaded += 1;
           if (result.existed) existed += 1;
         }
@@ -255,7 +304,7 @@ export default function App() {
       }
       return { uploaded, existed };
     },
-    [config, handleAddImage]
+    [config, images, knownFileNames, handleAddImage]
   );
 
   /* ─── Upload handlers ──── */
@@ -447,6 +496,7 @@ export default function App() {
                 throw new Error(data.message || 'Delete failed.');
               }
               setImages(prev => prev.filter(item => item.name !== image.name));
+              setKnownFileNames(prev => prev.filter(name => name !== image.name));
               setSelectedIndex(null);
               showMessage('Deleted.');
             } catch (error) {
@@ -515,6 +565,23 @@ export default function App() {
   }, [loadConfig]);
 
   useEffect(() => {
+    const loadIndex = async () => {
+      if (!config?.repo) {
+        setKnownFileNames([]);
+        return;
+      }
+      const names = await loadDuplicateIndex(config.repo);
+      setKnownFileNames(names);
+    };
+    loadIndex();
+  }, [config?.repo, loadDuplicateIndex]);
+
+  useEffect(() => {
+    if (!config?.repo) return;
+    saveDuplicateIndex(config.repo, knownFileNames);
+  }, [config?.repo, knownFileNames, saveDuplicateIndex]);
+
+  useEffect(() => {
     if (config) {
       refreshImages();
     }
@@ -530,15 +597,25 @@ export default function App() {
   };
 
   const handleUpdateConfig = async nextConfig => {
+    const previousRepo = config?.repo;
     setConfig(nextConfig);
     await saveConfig(nextConfig);
+    if (previousRepo && previousRepo !== nextConfig.repo) {
+      await clearDuplicateIndex(previousRepo);
+      setKnownFileNames([]);
+    }
     showMessage('Configuration saved.');
   };
 
   const handleClearConfig = async () => {
+    const repo = config?.repo;
     await clearConfig();
+    if (repo) {
+      await clearDuplicateIndex(repo);
+    }
     setConfig(null);
     setImages([]);
+    setKnownFileNames([]);
   };
 
   /* ─── Loading ──── */
