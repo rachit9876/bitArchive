@@ -50,6 +50,31 @@ const payloadFromAsset = async asset => {
   return { base64, extension, size };
 };
 
+export const buildFilenameFromPayload = ({ base64, extension }) => {
+  const normalizedExtension = normalizeExtension(extension);
+  const hash = CryptoJS.SHA256(base64).toString().slice(0, 12);
+  return `${hash}.${normalizedExtension}`;
+};
+
+const isAlreadyExistsError = error => {
+  const message = (error?.message || '').toLowerCase();
+  if (
+    message.includes('already exists') ||
+    message.includes('exists') ||
+    message.includes('sha wasn\'t supplied') ||
+    message.includes('"sha" wasn\'t supplied')
+  ) {
+    return true;
+  }
+  if (Array.isArray(error?.errors)) {
+    return error.errors.some(item => {
+      const text = `${item?.code || ''} ${item?.message || ''}`.toLowerCase();
+      return text.includes('exist') || text.includes('sha') || text.includes('update');
+    });
+  }
+  return false;
+};
+
 export const uploadImageBase64 = async ({ base64, extension, size, config }) => {
   if (!SUPPORTED_EXTS.includes(extension)) {
     throw new Error('Unsupported file type.');
@@ -58,8 +83,7 @@ export const uploadImageBase64 = async ({ base64, extension, size, config }) => 
     throw new Error('File exceeds 24MB limit.');
   }
 
-  const hash = CryptoJS.SHA256(base64).toString().slice(0, 12);
-  const filename = `${hash}.${extension}`;
+  const filename = buildFilenameFromPayload({ base64, extension });
   const response = await githubRequest(config, `contents/public/${filename}`, {
     method: 'PUT',
     body: JSON.stringify({
@@ -71,26 +95,41 @@ export const uploadImageBase64 = async ({ base64, extension, size, config }) => 
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    if (response.status === 422) {
-      const existing = await fileExists(config, filename);
-      if (existing) {
-        const localUri = await cacheImageFromGithub(
-          config,
-          filename,
-          extension,
-          existing.sha
-        );
+    if (response.status === 422 && isAlreadyExistsError(error)) {
+      try {
+        const localUri = await cacheImageFromGithub(config, filename, extension);
         return {
           image: {
             name: filename,
             url: localUri,
             localUri,
-            sha: existing.sha,
-            size: existing.size || size,
+            sha: null,
+            size,
             extension,
           },
           existed: true,
         };
+      } catch {
+        const existing = await fileExists(config, filename);
+        if (existing) {
+          const localUri = await cacheImageFromGithub(
+            config,
+            filename,
+            extension,
+            existing.sha
+          );
+          return {
+            image: {
+              name: filename,
+              url: localUri,
+              localUri,
+              sha: existing.sha,
+              size: existing.size || size,
+              extension,
+            },
+            existed: true,
+          };
+        }
       }
     }
     throw new Error(error.message || 'Upload failed.');

@@ -234,10 +234,13 @@ export default function App() {
   }, []);
 
   const uploadPayloads = useCallback(
-    async payloads => {
+    async (payloads, options = {}) => {
+      const { manageLoading = true } = options;
       let uploaded = 0;
       let existed = 0;
-      setUploading(true);
+      if (manageLoading) {
+        setUploading(true);
+      }
       try {
         for (const item of payloads) {
           const result = await uploadImageBase64({ ...item, config });
@@ -246,7 +249,9 @@ export default function App() {
           if (result.existed) existed += 1;
         }
       } finally {
-        setUploading(false);
+        if (manageLoading) {
+          setUploading(false);
+        }
       }
       return { uploaded, existed };
     },
@@ -291,15 +296,9 @@ export default function App() {
   }, [config, uploadPayloads]);
 
   const handlePaste = useCallback(async () => {
-    if (!config) return;
+    if (!config || uploading) return;
+    setUploading(true);
     try {
-      const text = await Clipboard.getStringAsync();
-      if (text && text.startsWith('http')) {
-        setRemoteUrl(text);
-        setShowUrlDialog(true);
-        return;
-      }
-
       try {
         const hasImage = await Clipboard.hasImageAsync();
         if (hasImage) {
@@ -307,7 +306,7 @@ export default function App() {
           if (image?.data) {
             const cleanBase64 = image.data.replace(/^data:image\/\w+;base64,/, '');
             const payload = { base64: cleanBase64, extension: 'png', size: Math.ceil(cleanBase64.length * 0.75) };
-            const { uploaded, existed } = await uploadPayloads([payload]);
+            const { existed } = await uploadPayloads([payload], { manageLoading: false });
             showMessage(existed ? 'Already uploaded. Loaded from cache.' : 'Upload complete.');
             setScreen('gallery');
             return;
@@ -317,11 +316,20 @@ export default function App() {
         console.log('Image paste error:', imgError);
       }
 
+      const text = await Clipboard.getStringAsync();
+      if (text && /^https?:\/\//i.test(text.trim())) {
+        setRemoteUrl(text.trim());
+        setShowUrlDialog(true);
+        return;
+      }
+
       showMessage('Clipboard does not contain an image or URL.');
     } catch (error) {
       showMessage(error.message || 'Paste failed.');
+    } finally {
+      setUploading(false);
     }
-  }, [config, uploadPayloads]);
+  }, [config, uploading, uploadPayloads]);
 
   const handleUrlUpload = useCallback(async (url) => {
     const targetUrl = url || remoteUrl;
