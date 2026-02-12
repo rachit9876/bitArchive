@@ -181,7 +181,6 @@ export default function App() {
   const [snackbar, setSnackbar] = useState('');
   const [pendingShare, setPendingShare] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest'); // 'newest' or 'oldest'
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -599,19 +598,10 @@ export default function App() {
               <Text style={{ fontSize: 11, opacity: 0.5, marginRight: 16 }}>
                 {images.length} image{images.length !== 1 ? 's' : ''} · {storageUsage}
               </Text>
-              {screen === 'gallery' && (
-                <Appbar.Action
-                  icon={() => <SearchIcon size={20} color={theme.colors.onSurface + (showSearch ? 'ff' : '99')} />}
-                  onPress={() => {
-                    setShowSearch(prev => !prev);
-                    if (showSearch) setSearchQuery('');
-                  }}
-                />
-              )}
             </Appbar.Header>
 
             {/* ─ Search & Sort (gallery only) ─ */}
-            {screen === 'gallery' && showSearch && (
+            {screen === 'gallery' && (
               <View
                 style={[
                   styles.searchRow,
@@ -625,12 +615,8 @@ export default function App() {
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   dense
-                  autoFocus
                   underlineColor="transparent"
                   activeUnderlineColor={theme.colors.primary}
-                  onBlur={() => {
-                    if (!searchQuery.trim()) setShowSearch(false);
-                  }}
                   style={[
                     styles.searchInput,
                     { backgroundColor: 'transparent' },
