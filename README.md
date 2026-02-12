@@ -32,6 +32,10 @@ chmod +x gradlew  # Linux/Mac only
 ./gradlew clean assembleRelease  # Linux/Mac
 gradlew clean assembleRelease    # Windows
 ```
+## Live Testing
+```
+adb devices && npm run android
+```
 
 ## Output
 APK: `android/app/build/outputs/apk/release/app-release.apk`
