@@ -4,6 +4,7 @@ Get your personal private image vault with cloud support to store old or less fr
 
 [![Download](https://img.shields.io/badge/Download-Now-purple?style=for-the-badge&logo=github)](https://github.com/rachit9876/bitArchive/releases)
 
+![img](https://cdn-public.pages.dev/public/7306f2977d10.png)
 
 ## Prerequisites
 - Node.js, JDK 17, Android Studio with SDK
