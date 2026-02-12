@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(128,128,128,0.3)',
+    borderTopColor: 'rgba(207,188,255,0.15)',
     paddingBottom: 4,
   },
   tabItem: {
@@ -172,14 +172,14 @@ const styles = StyleSheet.create({
   /* ---------- Overlay spinner ---------- */
   uploadOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(15,13,23,0.8)',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
     zIndex: 10,
   },
   uploadOverlayText: {
-    color: '#fff',
+    color: '#EDDCFF',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   imageMeta: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(207,188,255,0.7)',
     fontSize: 12,
   },
   /* ---------- Dialogs ---------- */
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   /* ---------- Image Viewer Modal ---------- */
   modal: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
+    backgroundColor: 'rgba(15,13,23,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,

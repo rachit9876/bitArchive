@@ -60,16 +60,35 @@ import {
 import { buildBaseUrl } from './src/utils';
 import styles from './src/styles';
 
-/* ─── Themes ──────────────────────────────────────────── */
+/* ─── Material 3 Expressive — Lavender ──────────────────── */
 
 const lightTheme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: '#2153ff',
-    background: '#f5f6fb',
-    surface: '#ffffff',
-    surfaceVariant: '#eef0f7',
+    primary: '#7C5CBF',
+    onPrimary: '#FFFFFF',
+    primaryContainer: '#EDDCFF',
+    onPrimaryContainer: '#2B0052',
+    secondary: '#9A82DB',
+    secondaryContainer: '#E8DEF8',
+    onSecondaryContainer: '#1D192B',
+    tertiary: '#B58DAE',
+    tertiaryContainer: '#FFD8F4',
+    background: '#F6F2FA',
+    onBackground: '#1C1B1F',
+    surface: '#FFFBFE',
+    onSurface: '#1C1B1F',
+    surfaceVariant: '#EDE7F3',
+    onSurfaceVariant: '#49454F',
+    outline: '#79747E',
+    elevation: {
+      ...MD3LightTheme.colors.elevation,
+      level0: 'transparent',
+      level1: '#F3EDF7',
+      level2: '#EDE8F2',
+      level3: '#E8E0ED',
+    },
   },
 };
 
@@ -77,10 +96,30 @@ const darkTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: '#7fa6ff',
-    background: '#0b0e16',
-    surface: '#151a26',
-    surfaceVariant: '#1c2130',
+    primary: '#CFBCFF',
+    onPrimary: '#381E72',
+    primaryContainer: '#4F378B',
+    onPrimaryContainer: '#EDDCFF',
+    secondary: '#CCC2DC',
+    secondaryContainer: '#4A4458',
+    onSecondaryContainer: '#E8DEF8',
+    tertiary: '#EFB8C8',
+    tertiaryContainer: '#633B48',
+    background: '#0F0D17',
+    onBackground: '#E6E1E5',
+    surface: '#1A1723',
+    onSurface: '#E6E1E5',
+    surfaceVariant: '#23202E',
+    onSurfaceVariant: '#CAC4D0',
+    surfaceDisabled: '#E6E1E51F',
+    outline: '#938F99',
+    elevation: {
+      ...MD3DarkTheme.colors.elevation,
+      level0: 'transparent',
+      level1: '#1F1B2C',
+      level2: '#242032',
+      level3: '#292538',
+    },
   },
 };
 
@@ -142,6 +181,7 @@ export default function App() {
   const [snackbar, setSnackbar] = useState('');
   const [pendingShare, setPendingShare] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest'); // 'newest' or 'oldest'
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
@@ -559,10 +599,19 @@ export default function App() {
               <Text style={{ fontSize: 11, opacity: 0.5, marginRight: 16 }}>
                 {images.length} image{images.length !== 1 ? 's' : ''} · {storageUsage}
               </Text>
+              {screen === 'gallery' && (
+                <Appbar.Action
+                  icon={() => <SearchIcon size={20} color={theme.colors.onSurface + (showSearch ? 'ff' : '99')} />}
+                  onPress={() => {
+                    setShowSearch(prev => !prev);
+                    if (showSearch) setSearchQuery('');
+                  }}
+                />
+              )}
             </Appbar.Header>
 
             {/* ─ Search & Sort (gallery only) ─ */}
-            {screen === 'gallery' && (
+            {screen === 'gallery' && showSearch && (
               <View
                 style={[
                   styles.searchRow,
@@ -576,8 +625,12 @@ export default function App() {
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   dense
+                  autoFocus
                   underlineColor="transparent"
                   activeUnderlineColor={theme.colors.primary}
+                  onBlur={() => {
+                    if (!searchQuery.trim()) setShowSearch(false);
+                  }}
                   style={[
                     styles.searchInput,
                     { backgroundColor: 'transparent' },
@@ -753,16 +806,16 @@ export default function App() {
                     <View style={styles.modalActions}>
                       <Button
                         mode="outlined"
-                        textColor="#fff"
+                        textColor="#CFBCFF"
                         onPress={() => setSelectedIndex(null)}
-                        icon={() => <Text style={{ color: '#fff' }}>✕</Text>}
+                        icon={() => <Text style={{ color: '#CFBCFF' }}>✕</Text>}
                       >
                         Close
                       </Button>
 
                       <Button
                         mode="outlined"
-                        textColor="#fff"
+                        textColor="#CFBCFF"
                         onPress={async () => {
                           if (await Sharing.isAvailableAsync()) {
                             const localUri =
@@ -773,15 +826,15 @@ export default function App() {
                             showMessage('Sharing is not available.');
                           }
                         }}
-                        icon={() => <ShareIcon size={16} color="#fff" />}
+                        icon={() => <ShareIcon size={16} color="#CFBCFF" />}
                       >
                         Share
                       </Button>
                       <Button
                         mode="outlined"
-                        textColor="#ff6b6b"
+                        textColor="#F2B8B5"
                         onPress={() => handleDelete(selectedImage)}
-                        icon={() => <TrashIcon size={16} color="#ff6b6b" />}
+                        icon={() => <TrashIcon size={16} color="#F2B8B5" />}
                       >
                         Delete
                       </Button>
