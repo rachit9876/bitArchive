@@ -3,8 +3,7 @@
 Get your personal private image vault with cloud support to store old or less frequently used images such as screenshots, memes, and more. You can also use it to securely store your private images. 
 
 <img src="https://cdn-public.pages.dev/public/7306f2977d10.png" width="60"> 
-
-<[![Download](https://img.shields.io/badge/Download-Now-purple?style=for-the-badge&logo=github)](https://github.com/rachit9876/bitArchive/releases)
+[![Download](https://img.shields.io/badge/Download-Now-purple?style=for-the-badge&logo=github)](https://github.com/rachit9876/bitArchive/releases)
 
 
 
