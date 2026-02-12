@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView } from 'react-native';
-import { Button, Card, Text, TextInput } from 'react-native-paper';
+import { Alert, ScrollView, View } from 'react-native';
+import { Button, Card, Divider, Text, TextInput, useTheme } from 'react-native-paper';
 import * as Clipboard from 'expo-clipboard';
 import { getRepoParts } from '../utils';
 import styles from '../styles';
 
-const SettingsScreen = ({ config, onUpdate, onClear, storageUsage, onMessage }) => {
+const SettingsScreen = ({ config, onUpdate, onClear, storageUsage, imageCount, onMessage }) => {
+  const theme = useTheme();
   const [draft, setDraft] = useState(config);
   const [importText, setImportText] = useState('');
 
@@ -42,6 +43,17 @@ const SettingsScreen = ({ config, onUpdate, onClear, storageUsage, onMessage }) 
     }
   };
 
+  const confirmClear = () => {
+    Alert.alert(
+      'Clear Configuration',
+      'This will remove all saved credentials and settings. You will need to set up again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear', style: 'destructive', onPress: onClear },
+      ]
+    );
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.form}>
       <Card style={styles.cardSpacing}>
@@ -64,7 +76,7 @@ const SettingsScreen = ({ config, onUpdate, onClear, storageUsage, onMessage }) 
             style={styles.topSpacing}
           />
           <TextInput
-            label="Base URL"
+            label="Base URL (optional)"
             mode="outlined"
             value={draft.baseUrl}
             onChangeText={baseUrl => setDraft(prev => ({ ...prev, baseUrl }))}
@@ -74,7 +86,7 @@ const SettingsScreen = ({ config, onUpdate, onClear, storageUsage, onMessage }) 
           <Button mode="contained" style={styles.topSpacing} onPress={save}>
             Save Changes
           </Button>
-          <Button mode="outlined" style={styles.topSpacing} onPress={onClear}>
+          <Button mode="outlined" style={styles.topSpacing} onPress={confirmClear}>
             Clear Configuration
           </Button>
         </Card.Content>
@@ -83,11 +95,14 @@ const SettingsScreen = ({ config, onUpdate, onClear, storageUsage, onMessage }) 
       <Card style={styles.cardSpacing}>
         <Card.Title title="Storage" />
         <Card.Content>
-          <Text>Usage: {storageUsage}</Text>
+          <View style={{ gap: 4 }}>
+            <Text>Images: {imageCount}</Text>
+            <Text>Usage: {storageUsage}</Text>
+          </View>
         </Card.Content>
       </Card>
 
-      <Card>
+      <Card style={styles.cardSpacing}>
         <Card.Title title="Export / Import" />
         <Card.Content>
           <Button mode="outlined" onPress={exportConfig}>
@@ -104,6 +119,17 @@ const SettingsScreen = ({ config, onUpdate, onClear, storageUsage, onMessage }) 
           <Button mode="contained" style={styles.topSpacing} onPress={importConfig}>
             Import Configuration
           </Button>
+        </Card.Content>
+      </Card>
+
+      <Card>
+        <Card.Title title="About" />
+        <Card.Content>
+          <Text style={{ opacity: 0.6 }}>Bit Archive v1.0.0</Text>
+          <Divider style={styles.topSpacing} />
+          <Text style={[styles.hint, { textAlign: 'left' }]}>
+            Private image archive powered by GitHub. Your images are stored in a GitHub repository and served via raw content URLs.
+          </Text>
         </Card.Content>
       </Card>
     </ScrollView>

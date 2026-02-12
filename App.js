@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Image,
   Modal,
   Platform,
   Pressable,
@@ -11,7 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   Appbar,
@@ -20,18 +19,30 @@ import {
   MD3DarkTheme,
   MD3LightTheme,
   PaperProvider,
-  SegmentedButtons,
   Snackbar,
   Text,
   TextInput,
+  useTheme,
 } from 'react-native-paper';
 import * as Sharing from 'expo-sharing';
+import * as Clipboard from 'expo-clipboard';
 import ShareMenu from 'react-native-share-menu';
 import GalleryScreen from './src/screens/GalleryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import SetupScreen from './src/screens/SetupScreen';
+import UploadTab from './src/screens/UploadTab';
 import ZoomableImage from './src/components/ZoomableImage';
-import { CameraIcon, ClipboardIcon, LinkIcon, ImageIcon, EyeIcon, EyeOffIcon } from './src/components/Icons';
+import {
+  CopyIcon,
+  GearIcon,
+  GridIcon,
+  ImageIcon,
+  SearchIcon,
+  ShareIcon,
+  SortIcon,
+  TrashIcon,
+  UploadIcon,
+} from './src/components/Icons';
 import useConfigStorage from './src/hooks/useConfigStorage';
 import {
   cacheImageFromGithub,
@@ -42,9 +53,14 @@ import {
 import {
   payloadFromUri,
   pickImageFromLibrary,
+  pickImageFromCamera,
+  payloadFromRemoteUrl,
   uploadImageBase64,
 } from './src/services/upload';
+import { buildBaseUrl } from './src/utils';
 import styles from './src/styles';
+
+/* ─── Themes ──────────────────────────────────────────── */
 
 const lightTheme = {
   ...MD3LightTheme,
@@ -53,6 +69,7 @@ const lightTheme = {
     primary: '#2153ff',
     background: '#f5f6fb',
     surface: '#ffffff',
+    surfaceVariant: '#eef0f7',
   },
 };
 
@@ -63,8 +80,51 @@ const darkTheme = {
     primary: '#7fa6ff',
     background: '#0b0e16',
     surface: '#151a26',
+    surfaceVariant: '#1c2130',
   },
 };
+
+/* ─── Bottom Tab Bar ──────────────────────────────────── */
+
+const TAB_ITEMS = [
+  { key: 'gallery', label: 'Gallery', Icon: GridIcon },
+  { key: 'upload', label: 'Upload', Icon: UploadIcon },
+  { key: 'settings', label: 'Settings', Icon: GearIcon },
+];
+
+function BottomTabBar({ active, onChange }) {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      style={[
+        styles.tabBar,
+        {
+          backgroundColor: theme.colors.surface,
+          paddingBottom: Math.max(insets.bottom, 4),
+        },
+      ]}
+    >
+      {TAB_ITEMS.map(({ key, label, Icon }) => {
+        const isActive = active === key;
+        const color = isActive ? theme.colors.primary : theme.colors.onSurface + '88';
+        return (
+          <Pressable
+            key={key}
+            style={styles.tabItem}
+            onPress={() => onChange(key)}
+            android_ripple={{ color: theme.colors.primary + '22', borderless: true }}
+          >
+            <Icon size={22} color={color} />
+            <Text style={[styles.tabLabel, { color }]}>{label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/* ─── Main App ────────────────────────────────────────── */
 
 export default function App() {
   const colorScheme = useColorScheme();
@@ -77,14 +137,39 @@ export default function App() {
   const [remoteUrl, setRemoteUrl] = useState('');
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
-  const [imagesVisible, setImagesVisible] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [snackbar, setSnackbar] = useState('');
   const [pendingShare, setPendingShare] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState('newest'); // 'newest' or 'oldest'
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
+  /* ─── Derived state ──── */
+
+  const filteredImages = useMemo(() => {
+    let list = images;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(img => img.name.toLowerCase().includes(q));
+    }
+    if (sortOrder === 'oldest') {
+      list = [...list].reverse();
+    }
+    return list;
+  }, [images, searchQuery, sortOrder]);
+
   const selectedImage =
-    selectedIndex !== null ? images[selectedIndex] || null : null;
+    selectedIndex !== null ? filteredImages[selectedIndex] || null : null;
+
+  const storageUsage = useMemo(() => {
+    const total = images.reduce((sum, image) => sum + (image.size || 0), 0);
+    if (total < 1024) return `${total} B`;
+    if (total < 1024 * 1024) return `${(total / 1024).toFixed(1)} KB`;
+    return `${(total / (1024 * 1024)).toFixed(2)} MB`;
+  }, [images]);
+
+  /* ─── Helpers ──── */
 
   const showMessage = message => {
     setSnackbar(message);
@@ -103,18 +188,6 @@ export default function App() {
     }
   }, [config]);
 
-  const requestRefreshImages = useCallback(() => {
-    if (!config) return;
-    Alert.alert(
-      'Refresh images',
-      'Load the latest images from GitHub? This makes API requests and may count toward rate limits.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Load', onPress: () => refreshImages() },
-      ]
-    );
-  }, [config, refreshImages]);
-
   const handleAddImage = useCallback(image => {
     setImages(prev => [image, ...prev]);
   }, []);
@@ -123,16 +196,23 @@ export default function App() {
     async payloads => {
       let uploaded = 0;
       let existed = 0;
-      for (const item of payloads) {
-        const result = await uploadImageBase64({ ...item, config });
-        handleAddImage(result.image);
-        uploaded += 1;
-        if (result.existed) existed += 1;
+      setUploading(true);
+      try {
+        for (const item of payloads) {
+          const result = await uploadImageBase64({ ...item, config });
+          handleAddImage(result.image);
+          uploaded += 1;
+          if (result.existed) existed += 1;
+        }
+      } finally {
+        setUploading(false);
       }
       return { uploaded, existed };
     },
     [config, handleAddImage]
   );
+
+  /* ─── Upload handlers ──── */
 
   const handleQuickAdd = useCallback(async () => {
     if (!config) return;
@@ -150,29 +230,28 @@ export default function App() {
       } else {
         showMessage(existed ? 'Already uploaded. Loaded from cache.' : 'Upload complete.');
       }
+      setScreen('gallery');
     } catch (error) {
       showMessage(error.message || 'Upload failed.');
     }
-  }, [config, showMessage, uploadPayloads]);
+  }, [config, uploadPayloads]);
 
   const handleCamera = useCallback(async () => {
     if (!config) return;
     try {
-      const { pickImageFromCamera } = await import('./src/services/upload');
       const payload = await pickImageFromCamera(showMessage);
       if (!payload) return;
       const { uploaded, existed } = await uploadPayloads([payload]);
       showMessage(existed ? 'Already uploaded. Loaded from cache.' : 'Upload complete.');
+      setScreen('gallery');
     } catch (error) {
       showMessage(error.message || 'Upload failed.');
     }
-  }, [config, showMessage, uploadPayloads]);
+  }, [config, uploadPayloads]);
 
   const handlePaste = useCallback(async () => {
     if (!config) return;
     try {
-      const Clipboard = await import('expo-clipboard');
-
       const text = await Clipboard.getStringAsync();
       if (text && text.startsWith('http')) {
         setRemoteUrl(text);
@@ -189,6 +268,7 @@ export default function App() {
             const payload = { base64: cleanBase64, extension: 'png', size: Math.ceil(cleanBase64.length * 0.75) };
             const { uploaded, existed } = await uploadPayloads([payload]);
             showMessage(existed ? 'Already uploaded. Loaded from cache.' : 'Upload complete.');
+            setScreen('gallery');
             return;
           }
         }
@@ -200,23 +280,26 @@ export default function App() {
     } catch (error) {
       showMessage(error.message || 'Paste failed.');
     }
-  }, [config, showMessage, uploadPayloads]);
+  }, [config, uploadPayloads]);
 
-  const handleUrlUpload = useCallback(async () => {
-    if (!config || !remoteUrl.trim()) return;
+  const handleUrlUpload = useCallback(async (url) => {
+    const targetUrl = url || remoteUrl;
+    if (!config || !targetUrl.trim()) return;
     try {
-      const { payloadFromRemoteUrl } = await import('./src/services/upload');
-      const payload = await payloadFromRemoteUrl(remoteUrl);
+      const payload = await payloadFromRemoteUrl(targetUrl);
       if (payload) {
         const { uploaded, existed } = await uploadPayloads([payload]);
         showMessage(existed ? 'Already uploaded. Loaded from cache.' : 'Upload complete.');
+        setScreen('gallery');
       }
       setShowUrlDialog(false);
       setRemoteUrl('');
     } catch (error) {
       showMessage(error.message || 'Upload failed.');
     }
-  }, [config, remoteUrl, showMessage, uploadPayloads]);
+  }, [config, remoteUrl, uploadPayloads]);
+
+  /* ─── Share intent ──── */
 
   useEffect(() => {
     if (Platform.OS === 'web') return undefined;
@@ -252,7 +335,7 @@ export default function App() {
     ShareMenu.getInitialShare(handleShare);
     const listener = ShareMenu.addNewShareListener(handleShare);
     return () => listener?.remove();
-  }, [config, showMessage, uploadPayloads]);
+  }, [config, uploadPayloads]);
 
   useEffect(() => {
     if (!config || !pendingShare) return;
@@ -280,14 +363,18 @@ export default function App() {
       }
     };
     run();
-  }, [config, pendingShare, showMessage, uploadPayloads]);
+  }, [config, pendingShare, uploadPayloads]);
+
+  /* ─── Index safety ──── */
 
   useEffect(() => {
     if (selectedIndex === null) return;
-    if (selectedIndex >= images.length) {
-      setSelectedIndex(images.length ? images.length - 1 : null);
+    if (selectedIndex >= filteredImages.length) {
+      setSelectedIndex(filteredImages.length ? filteredImages.length - 1 : null);
     }
-  }, [images.length, selectedIndex]);
+  }, [filteredImages.length, selectedIndex]);
+
+  /* ─── Delete ──── */
 
   const handleDelete = useCallback(
     image => {
@@ -311,6 +398,7 @@ export default function App() {
                 throw new Error(data.message || 'Delete failed.');
               }
               setImages(prev => prev.filter(item => item.name !== image.name));
+              setSelectedIndex(null);
               showMessage('Deleted.');
             } catch (error) {
               showMessage(error.message || 'Delete failed.');
@@ -321,6 +409,21 @@ export default function App() {
     },
     [config]
   );
+
+  /* ─── Copy URL ──── */
+
+  const handleCopyUrl = useCallback(
+    async image => {
+      if (!image) return;
+      const base = buildBaseUrl(config);
+      const url = `${base}${image.name}`;
+      await Clipboard.setStringAsync(url);
+      showMessage('URL copied to clipboard.');
+    },
+    [config]
+  );
+
+  /* ─── Local URI ──── */
 
   const ensureLocalUri = useCallback(
     async image => {
@@ -334,14 +437,19 @@ export default function App() {
         return null;
       }
     },
-    [config, showMessage]
+    [config]
   );
 
-  const storageUsage = useMemo(() => {
-    const total = images.reduce((sum, image) => sum + (image.size || 0), 0);
-    const mb = (total / (1024 * 1024)).toFixed(2);
-    return `${mb} MB`;
-  }, [images]);
+  /* ─── File size formatter ──── */
+
+  const formatSize = size => {
+    if (!size) return '';
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  /* ─── Config lifecycle ──── */
 
   useEffect(() => {
     const load = async () => {
@@ -384,6 +492,8 @@ export default function App() {
     setImages([]);
   };
 
+  /* ─── Loading ──── */
+
   if (configLoading) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -394,8 +504,8 @@ export default function App() {
               edges={['top', 'bottom']}
             >
               <View style={styles.loadingScreen}>
-                <ActivityIndicator />
-                <Text style={styles.hint}>Loading configuration...</Text>
+                <ActivityIndicator size="large" />
+                <Text style={styles.hint}>Loading configuration…</Text>
               </View>
             </SafeAreaView>
           </SafeAreaProvider>
@@ -403,6 +513,8 @@ export default function App() {
       </GestureHandlerRootView>
     );
   }
+
+  /* ─── Setup ──── */
 
   if (!config) {
     return (
@@ -428,59 +540,92 @@ export default function App() {
     );
   }
 
+  /* ─── Main UI ──── */
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PaperProvider theme={theme}>
         <SafeAreaProvider>
           <SafeAreaView
             style={[styles.screen, { backgroundColor: theme.colors.background }]}
-            edges={['top', 'bottom']}
+            edges={[]}
           >
-            <Appbar.Header>
-              <Appbar.Content title="GitHub CDN" />
-              <Chip mode="outlined" style={styles.chip}>
-                {config.repo}
-              </Chip>
+            {/* ─ Header ─ */}
+            <Appbar.Header style={{ height: 48 }}>
+              <Appbar.Content
+                title="Bit Archive"
+                titleStyle={{ fontWeight: '700', fontSize: 17 }}
+              />
+              <Text style={{ fontSize: 11, opacity: 0.5, marginRight: 16 }}>
+                {images.length} image{images.length !== 1 ? 's' : ''} · {storageUsage}
+              </Text>
             </Appbar.Header>
-            <SegmentedButtons
-              value={screen}
-              onValueChange={setScreen}
-              buttons={[
-                { value: 'gallery', label: 'Gallery' },
-                { value: 'settings', label: 'Settings' },
-              ]}
-              style={styles.segmented}
-            />
+
+            {/* ─ Search & Sort (gallery only) ─ */}
+            {screen === 'gallery' && (
+              <View
+                style={[
+                  styles.searchRow,
+                  { backgroundColor: theme.colors.surface },
+                ]}
+              >
+                <SearchIcon size={18} color={theme.colors.onSurface + '77'} />
+                <TextInput
+                  mode="flat"
+                  placeholder="Search images…"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  dense
+                  underlineColor="transparent"
+                  activeUnderlineColor={theme.colors.primary}
+                  style={[
+                    styles.searchInput,
+                    { backgroundColor: 'transparent' },
+                  ]}
+                />
+                <Pressable
+                  onPress={() =>
+                    setSortOrder(prev => (prev === 'newest' ? 'oldest' : 'newest'))
+                  }
+                  android_ripple={{ color: theme.colors.primary + '22', borderless: true }}
+                >
+                  <Chip
+                    mode="outlined"
+                    compact
+                    style={styles.sortChip}
+                    icon={() => (
+                      <SortIcon size={14} color={theme.colors.onSurface + 'aa'} />
+                    )}
+                  >
+                    {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
+                  </Chip>
+                </Pressable>
+              </View>
+            )}
+
+            {/* ─ Content ─ */}
             <View style={styles.content}>
               {screen === 'gallery' && (
-                <View style={styles.galleryWrap}>
-                  <GalleryScreen
-                    images={imagesVisible ? images : []}
-                    refreshing={loadingImages}
-                    onRefresh={requestRefreshImages}
-                    onOpen={image => {
-                      const index = images.findIndex(item => item.name === image.name);
-                      setSelectedIndex(index >= 0 ? index : 0);
-                    }}
-                  />
-                  <View style={styles.fabGroup}>
-                    <Pressable style={styles.fabSmall} onPress={() => setImagesVisible(!imagesVisible)}>
-                      {imagesVisible ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
-                    </Pressable>
-                    <Pressable style={styles.fabSmall} onPress={handleCamera}>
-                      <CameraIcon size={20} />
-                    </Pressable>
-                    <Pressable style={styles.fabSmall} onPress={handlePaste}>
-                      <ClipboardIcon size={20} />
-                    </Pressable>
-                    <Pressable style={styles.fabSmall} onPress={() => setShowUrlDialog(true)}>
-                      <LinkIcon size={20} />
-                    </Pressable>
-                    <Pressable style={styles.fabSmall} onPress={handleQuickAdd}>
-                      <ImageIcon size={20} />
-                    </Pressable>
-                  </View>
-                </View>
+                <GalleryScreen
+                  images={filteredImages}
+                  refreshing={loadingImages}
+                  onRefresh={refreshImages}
+                  onOpen={image => {
+                    const index = filteredImages.findIndex(
+                      item => item.name === image.name
+                    );
+                    setSelectedIndex(index >= 0 ? index : 0);
+                  }}
+                />
+              )}
+              {screen === 'upload' && (
+                <UploadTab
+                  uploading={uploading}
+                  onPickGallery={handleQuickAdd}
+                  onCamera={handleCamera}
+                  onPaste={handlePaste}
+                  onUrlSubmit={handleUrlUpload}
+                />
               )}
               {screen === 'settings' && (
                 <SettingsScreen
@@ -488,14 +633,33 @@ export default function App() {
                   onUpdate={handleUpdateConfig}
                   onClear={handleClearConfig}
                   storageUsage={storageUsage}
+                  imageCount={images.length}
                   onMessage={showMessage}
                 />
               )}
             </View>
+
+            {/* ─ Bottom Tab Bar ─ */}
+            <BottomTabBar active={screen} onChange={setScreen} />
+
+            {/* ─ URL Dialog ─ */}
             <Modal visible={showUrlDialog} transparent animationType="fade">
-              <Pressable style={styles.modalOverlay} onPress={() => setShowUrlDialog(false)}>
-                <Pressable style={styles.urlDialog} onPress={e => e.stopPropagation()}>
-                  <Text style={styles.dialogTitle}>Enter Image URL</Text>
+              <Pressable
+                style={styles.modalOverlay}
+                onPress={() => setShowUrlDialog(false)}
+              >
+                <Pressable
+                  style={[
+                    styles.urlDialog,
+                    { backgroundColor: theme.colors.surface },
+                  ]}
+                  onPress={e => e.stopPropagation()}
+                >
+                  <Text
+                    style={[styles.dialogTitle, { color: theme.colors.onSurface }]}
+                  >
+                    Enter Image URL
+                  </Text>
                   <TextInput
                     mode="outlined"
                     value={remoteUrl}
@@ -505,80 +669,134 @@ export default function App() {
                     autoFocus
                   />
                   <View style={styles.dialogActions}>
-                    <Button mode="outlined" onPress={() => { setShowUrlDialog(false); setRemoteUrl(''); }}>
+                    <Button
+                      mode="outlined"
+                      onPress={() => {
+                        setShowUrlDialog(false);
+                        setRemoteUrl('');
+                      }}
+                    >
                       Cancel
                     </Button>
-                    <Button mode="contained" onPress={handleUrlUpload}>
+                    <Button mode="contained" onPress={() => handleUrlUpload()}>
                       Upload
                     </Button>
                   </View>
                 </Pressable>
               </Pressable>
             </Modal>
-            <Modal visible={selectedIndex !== null} transparent animationType="fade">
+
+            {/* ─ Image Viewer Modal ─ */}
+            <Modal
+              visible={selectedIndex !== null}
+              transparent
+              animationType="fade"
+            >
               <View style={styles.modal}>
                 {selectedImage && (
-                  <FlatList
-                    data={images}
-                    horizontal
-                    pagingEnabled
-                    initialScrollIndex={selectedIndex}
-                    keyExtractor={item => item.name}
-                    getItemLayout={(_, index) => ({
-                      length: screenWidth,
-                      offset: screenWidth * index,
-                      index,
-                    })}
-                    onScrollToIndexFailed={() => {
-                      setTimeout(() => {
-                        setSelectedIndex(current => (current === null ? 0 : current));
-                      }, 50);
-                    }}
-                    onMomentumScrollEnd={event => {
-                      const width = event.nativeEvent.layoutMeasurement.width;
-                      const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-                      setSelectedIndex(nextIndex);
-                    }}
-                    style={[styles.modalPager, { height: screenHeight * 0.7 }]}
-                    renderItem={({ item }) => (
-                      <View style={[styles.modalImageWrap, { width: screenWidth }]}>
-                        <ZoomableImage
-                          uri={item.url}
-                          width={screenWidth}
-                          height={screenHeight * 0.7}
-                          onDismiss={() => setSelectedIndex(null)}
-                        />
-                      </View>
-                    )}
-                  />
-                )}
-                {selectedImage && (
-                  <View style={styles.modalActions}>
-                    <Button mode="outlined" onPress={() => setSelectedIndex(null)}>
-                      Close
-                    </Button>
-                    <Button
-                      mode="outlined"
-                      onPress={async () => {
-                        if (await Sharing.isAvailableAsync()) {
-                          const localUri = await ensureLocalUri(selectedImage);
-                          if (!localUri) return;
-                          await Sharing.shareAsync(localUri);
-                        } else {
-                          showMessage('Sharing is not available.');
-                        }
+                  <>
+                    <FlatList
+                      data={filteredImages}
+                      horizontal
+                      pagingEnabled
+                      initialScrollIndex={selectedIndex}
+                      keyExtractor={item => item.name}
+                      getItemLayout={(_, index) => ({
+                        length: screenWidth,
+                        offset: screenWidth * index,
+                        index,
+                      })}
+                      onScrollToIndexFailed={() => {
+                        setTimeout(() => {
+                          setSelectedIndex(current =>
+                            current === null ? 0 : current
+                          );
+                        }, 50);
                       }}
-                    >
-                      Share
-                    </Button>
-                    <Button mode="outlined" onPress={() => handleDelete(selectedImage)}>
-                      Delete
-                    </Button>
-                  </View>
+                      onMomentumScrollEnd={event => {
+                        const width =
+                          event.nativeEvent.layoutMeasurement.width;
+                        const nextIndex = Math.round(
+                          event.nativeEvent.contentOffset.x / width
+                        );
+                        setSelectedIndex(nextIndex);
+                      }}
+                      style={[styles.modalPager, { height: screenHeight * 0.65 }]}
+                      renderItem={({ item }) => (
+                        <View
+                          style={[styles.modalImageWrap, { width: screenWidth }]}
+                        >
+                          <ZoomableImage
+                            uri={item.url}
+                            width={screenWidth}
+                            height={screenHeight * 0.65}
+                            onDismiss={() => setSelectedIndex(null)}
+                          />
+                        </View>
+                      )}
+                    />
+                    {/* Image info */}
+                    <View style={styles.imageMetaRow}>
+                      <Text style={styles.imageMeta}>{selectedImage.name}</Text>
+                      {selectedImage.size > 0 && (
+                        <Text style={styles.imageMeta}>
+                          {formatSize(selectedImage.size)}
+                        </Text>
+                      )}
+                      {selectedImage.extension && (
+                        <Text style={styles.imageMeta}>
+                          {selectedImage.extension.toUpperCase()}
+                        </Text>
+                      )}
+                    </View>
+                    {/* Actions */}
+                    <View style={styles.modalActions}>
+                      <Button
+                        mode="outlined"
+                        textColor="#fff"
+                        onPress={() => setSelectedIndex(null)}
+                        icon={() => <Text style={{ color: '#fff' }}>✕</Text>}
+                      >
+                        Close
+                      </Button>
+
+                      <Button
+                        mode="outlined"
+                        textColor="#fff"
+                        onPress={async () => {
+                          if (await Sharing.isAvailableAsync()) {
+                            const localUri =
+                              await ensureLocalUri(selectedImage);
+                            if (!localUri) return;
+                            await Sharing.shareAsync(localUri);
+                          } else {
+                            showMessage('Sharing is not available.');
+                          }
+                        }}
+                        icon={() => <ShareIcon size={16} color="#fff" />}
+                      >
+                        Share
+                      </Button>
+                      <Button
+                        mode="outlined"
+                        textColor="#ff6b6b"
+                        onPress={() => handleDelete(selectedImage)}
+                        icon={() => <TrashIcon size={16} color="#ff6b6b" />}
+                      >
+                        Delete
+                      </Button>
+                    </View>
+                  </>
                 )}
               </View>
             </Modal>
-            <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3000}>
+
+            {/* ─ Snackbar ─ */}
+            <Snackbar
+              visible={Boolean(snackbar)}
+              onDismiss={() => setSnackbar('')}
+              duration={3000}
+            >
               {snackbar}
             </Snackbar>
           </SafeAreaView>

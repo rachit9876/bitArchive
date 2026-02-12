@@ -3,7 +3,6 @@ import { StyleSheet } from 'react-native';
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#0b0e16',
   },
   content: {
     flex: 1,
@@ -42,8 +41,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   hint: {
-    marginTop: 8,
-    opacity: 0.7,
+    marginTop: 16,
+    opacity: 0.5,
+    textAlign: 'center',
   },
   imageRow: {
     marginTop: 12,
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   skeleton: {
-    backgroundColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: 'rgba(128,128,128,0.15)',
   },
   skeletonLine: {
     height: 12,
@@ -86,68 +86,116 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   grid: {
-    padding: 8,
-    gap: 8,
+    padding: 4,
   },
   gridItem: {
     flex: 1,
-    margin: 4,
+    margin: 2,
     aspectRatio: 1,
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
   },
   gridImage: {
     width: '100%',
     height: '100%',
   },
-  segmented: {
-    marginHorizontal: 16,
-    marginTop: 8,
-  },
   chip: {
     marginRight: 12,
   },
-  fab: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2153ff',
+  /* ---------- Bottom Tab Bar ---------- */
+  tabBar: {
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(128,128,128,0.3)',
+    paddingBottom: 4,
+  },
+  tabItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    paddingVertical: 8,
+    gap: 2,
   },
-  fabIcon: {
-    color: '#ffffff',
-    fontSize: 30,
-    lineHeight: 32,
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
   },
-  fabGroup: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
+  /* ---------- Search Bar ---------- */
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 38,
+    fontSize: 14,
+  },
+  sortChip: {
+    height: 32,
+  },
+  /* ---------- Upload Tab ---------- */
+  uploadTab: {
+    flex: 1,
+    padding: 16,
+    gap: 16,
+  },
+  uploadCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  uploadCardContent: {
+    alignItems: 'center',
+    paddingVertical: 28,
+    gap: 10,
+  },
+  uploadCardLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  uploadCardHint: {
+    fontSize: 12,
+    opacity: 0.5,
+  },
+  uploadGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
-    alignItems: 'flex-end',
   },
-  fabSmall: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2153ff',
+  uploadGridItem: {
+    flex: 1,
+    minWidth: '45%',
+  },
+  /* ---------- Overlay spinner ---------- */
+  uploadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    gap: 12,
+    zIndex: 10,
   },
-  fabIconSmall: {
-    fontSize: 20,
+  uploadOverlayText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
+  /* ---------- Image Info in Viewer ---------- */
+  imageMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  imageMeta: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+  },
+  /* ---------- Dialogs ---------- */
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -155,12 +203,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   urlDialog: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     width: '85%',
     maxWidth: 400,
     gap: 16,
+    elevation: 8,
   },
   dialogTitle: {
     fontSize: 18,
@@ -171,12 +219,13 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'flex-end',
   },
+  /* ---------- Image Viewer Modal ---------- */
   modal: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: 'rgba(0,0,0,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: 12,
   },
   modalPager: {
     flexGrow: 0,
@@ -195,6 +244,42 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'center',
+  },
+  /* ---------- Empty State ---------- */
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    gap: 12,
+    minHeight: 300,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    opacity: 0.7,
+  },
+  emptyHint: {
+    fontSize: 13,
+    opacity: 0.45,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  /* ---------- Stats Row ---------- */
+  statsRow: {
+    flexDirection: 'row',
+    gap: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: 12,
+    opacity: 0.6,
   },
 });
 
