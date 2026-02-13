@@ -33,6 +33,7 @@ const styles = StyleSheet.create({
   },
   cardSpacing: {
     marginBottom: 16,
+    borderRadius: 16,
   },
   progressRow: {
     marginTop: 12,
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
     flex: 1,
     margin: 2,
     aspectRatio: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   gridImage: {
@@ -106,36 +107,49 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(207,188,255,0.15)',
+    borderTopColor: 'rgba(207,188,255,0.12)',
     paddingBottom: 4,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    gap: 2,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  tabIndicator: {
+    paddingHorizontal: 20,
+    paddingVertical: 4,
+    borderRadius: 16,
   },
   tabLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+    fontSize: 12,
+    letterSpacing: 0.3,
   },
   /* ---------- Search Bar ---------- */
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  searchPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    height: 44,
     gap: 8,
   },
   searchInput: {
     flex: 1,
-    height: 38,
+    height: 44,
     fontSize: 14,
   },
   sortChip: {
-    height: 32,
+    height: 36,
   },
   /* ---------- Upload Tab ---------- */
   uploadTab: {
@@ -144,7 +158,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   uploadCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   uploadCardContent: {
@@ -203,8 +217,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   urlDialog: {
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 28,
+    padding: 24,
     width: '85%',
     maxWidth: 400,
     gap: 16,

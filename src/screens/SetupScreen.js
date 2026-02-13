@@ -281,7 +281,7 @@ const SetupScreen = ({ onComplete, onMessage }) => {
               onPress={quickSetup}
               loading={loading}
               disabled={loading || !token.trim()}
-              style={{ marginTop: 16, borderRadius: 24, paddingVertical: 4 }}
+              style={{ marginTop: 16 }}
               contentStyle={{ height: 48 }}
               labelStyle={{ fontSize: 15, fontWeight: '700' }}
               icon="github"

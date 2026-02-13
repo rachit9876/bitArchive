@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
   FlatList,
   Modal,
   Platform,
@@ -68,6 +69,7 @@ import styles from './src/styles';
 
 const lightTheme = {
   ...MD3LightTheme,
+  roundness: 100,
   colors: {
     ...MD3LightTheme.colors,
     primary: '#7C5CBF',
@@ -98,6 +100,7 @@ const lightTheme = {
 
 const darkTheme = {
   ...MD3DarkTheme,
+  roundness: 100,
   colors: {
     ...MD3DarkTheme.colors,
     primary: '#CFBCFF',
@@ -144,13 +147,14 @@ function BottomTabBar({ active, onChange }) {
         styles.tabBar,
         {
           backgroundColor: theme.colors.surface,
-          paddingBottom: Math.max(insets.bottom, 4),
+          paddingBottom: Math.max(insets.bottom, 6),
         },
       ]}
     >
       {TAB_ITEMS.map(({ key, label, Icon }) => {
         const isActive = active === key;
-        const color = isActive ? theme.colors.primary : theme.colors.onSurface + '88';
+        const color = isActive ? theme.colors.onSecondaryContainer : theme.colors.onSurface + '88';
+        const labelColor = isActive ? theme.colors.onSurface : theme.colors.onSurface + '88';
         return (
           <Pressable
             key={key}
@@ -158,8 +162,19 @@ function BottomTabBar({ active, onChange }) {
             onPress={() => onChange(key)}
             android_ripple={{ color: theme.colors.primary + '22', borderless: true }}
           >
-            <Icon size={22} color={color} />
-            <Text style={[styles.tabLabel, { color }]}>{label}</Text>
+            <View
+              style={[
+                styles.tabIndicator,
+                isActive && {
+                  backgroundColor: theme.colors.secondaryContainer,
+                },
+              ]}
+            >
+              <Icon size={22} color={color} />
+            </View>
+            <Text style={[styles.tabLabel, { color: labelColor, fontWeight: isActive ? '700' : '500' }]}>
+              {label}
+            </Text>
           </Pressable>
         );
       })}
@@ -696,12 +711,12 @@ export default function App() {
             edges={[]}
           >
             {/* ─ Header ─ */}
-            <Appbar.Header style={{ height: 48 }}>
+            <Appbar.Header elevated>
               <Appbar.Content
                 title="Bit Archive"
-                titleStyle={{ fontWeight: '700', fontSize: 17 }}
+                titleStyle={{ fontWeight: '700' }}
               />
-              <Text style={{ fontSize: 11, opacity: 0.5, marginRight: 16 }}>
+              <Text variant="labelSmall" style={{ opacity: 0.5, marginRight: 16 }}>
                 {images.length} image{images.length !== 1 ? 's' : ''} · {storageUsage}
               </Text>
             </Appbar.Header>
@@ -711,23 +726,30 @@ export default function App() {
               <View
                 style={[
                   styles.searchRow,
-                  { backgroundColor: theme.colors.surface },
+                  { backgroundColor: theme.colors.background },
                 ]}
               >
-                <SearchIcon size={18} color={theme.colors.onSurface + '77'} />
-                <TextInput
-                  mode="flat"
-                  placeholder="Search images…"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  dense
-                  underlineColor="transparent"
-                  activeUnderlineColor={theme.colors.primary}
+                <View
                   style={[
-                    styles.searchInput,
-                    { backgroundColor: 'transparent' },
+                    styles.searchPill,
+                    { backgroundColor: theme.colors.surfaceVariant },
                   ]}
-                />
+                >
+                  <SearchIcon size={18} color={theme.colors.onSurfaceVariant} />
+                  <TextInput
+                    mode="flat"
+                    placeholder="Search images…"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    dense
+                    underlineColor="transparent"
+                    activeUnderlineColor="transparent"
+                    style={[
+                      styles.searchInput,
+                      { backgroundColor: 'transparent' },
+                    ]}
+                  />
+                </View>
                 <Pressable
                   onPress={() =>
                     setSortOrder(prev => (prev === 'newest' ? 'oldest' : 'newest'))
@@ -739,7 +761,7 @@ export default function App() {
                     compact
                     style={styles.sortChip}
                     icon={() => (
-                      <SortIcon size={14} color={theme.colors.onSurface + 'aa'} />
+                      <SortIcon size={14} color={theme.colors.onSurfaceVariant} />
                     )}
                   >
                     {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
@@ -898,17 +920,15 @@ export default function App() {
                     {/* Actions */}
                     <View style={styles.modalActions}>
                       <Button
-                        mode="outlined"
-                        textColor="#CFBCFF"
+                        mode="contained-tonal"
                         onPress={() => setSelectedIndex(null)}
-                        icon={() => <Text style={{ color: '#CFBCFF' }}>✕</Text>}
+                        icon={() => <Text style={{ color: theme.colors.onSecondaryContainer }}>✕</Text>}
                       >
                         Close
                       </Button>
 
                       <Button
-                        mode="outlined"
-                        textColor="#CFBCFF"
+                        mode="contained-tonal"
                         onPress={async () => {
                           try {
                             const localUri = await ensureLocalUri(selectedImage);
@@ -918,7 +938,6 @@ export default function App() {
                             }
                             let base64;
                             if (localUri.startsWith('data:')) {
-                              // Data URI — extract base64 part
                               base64 = localUri.split(',')[1];
                             } else {
                               base64 = await FileSystem.readAsStringAsync(localUri, {
@@ -936,14 +955,13 @@ export default function App() {
                             showMessage('Copy failed: ' + (e.message || 'Unknown error'));
                           }
                         }}
-                        icon={() => <CopyIcon size={16} color="#CFBCFF" />}
+                        icon={() => <CopyIcon size={16} color={theme.colors.onSecondaryContainer} />}
                       >
                         Copy
                       </Button>
 
                       <Button
-                        mode="outlined"
-                        textColor="#CFBCFF"
+                        mode="contained-tonal"
                         onPress={async () => {
                           if (await Sharing.isAvailableAsync()) {
                             const localUri =
@@ -954,15 +972,15 @@ export default function App() {
                             showMessage('Sharing is not available.');
                           }
                         }}
-                        icon={() => <ShareIcon size={16} color="#CFBCFF" />}
+                        icon={() => <ShareIcon size={16} color={theme.colors.onSecondaryContainer} />}
                       >
                         Share
                       </Button>
                       <Button
                         mode="outlined"
-                        textColor="#F2B8B5"
+                        textColor={theme.colors.error}
                         onPress={() => handleDelete(selectedImage)}
-                        icon={() => <TrashIcon size={16} color="#F2B8B5" />}
+                        icon={() => <TrashIcon size={16} color={theme.colors.error} />}
                       >
                         Delete
                       </Button>

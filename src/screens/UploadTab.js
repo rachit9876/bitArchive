@@ -33,6 +33,32 @@ const UploadTab = ({ uploading, onPickGallery, onCamera, onPaste, onUrlSubmit })
                     <Text style={styles.uploadOverlayText}>Uploading…</Text>
                 </View>
             )}
+
+            <View style={[styles.searchRow, { backgroundColor: theme.colors.background }]}>
+                <View style={[styles.searchPill, { backgroundColor: theme.colors.surfaceVariant }]}>
+                    <LinkIcon size={20} color={theme.colors.onSurfaceVariant} />
+                    <TextInput
+                        mode="flat"
+                        placeholder="Paste image URL here…"
+                        value={remoteUrl}
+                        onChangeText={setRemoteUrl}
+                        dense
+                        underlineColor="transparent"
+                        activeUnderlineColor="transparent"
+                        style={[
+                            styles.searchInput,
+                            { backgroundColor: 'transparent' },
+                        ]}
+                        right={
+                            remoteUrl.trim() ? (
+                                <TextInput.Icon icon="arrow-right" onPress={handleUrlSubmit} />
+                            ) : null
+                        }
+                        onSubmitEditing={handleUrlSubmit}
+                    />
+                </View>
+            </View>
+
             <ScrollView contentContainerStyle={styles.uploadTab}>
                 <Text variant="titleMedium" style={{ opacity: 0.7, marginBottom: 4 }}>
                     Add images to your archive
@@ -41,7 +67,7 @@ const UploadTab = ({ uploading, onPickGallery, onCamera, onPaste, onUrlSubmit })
                 <View style={styles.uploadGrid}>
                     <View style={styles.uploadGridItem}>
                         <Pressable onPress={onPickGallery}>
-                            <Card style={styles.uploadCard}>
+                            <Card style={styles.uploadCard} mode="elevated">
                                 <Card.Content style={styles.uploadCardContent}>
                                     <ImageIcon size={32} color={theme.colors.primary} />
                                     <Text style={[styles.uploadCardLabel, { color: theme.colors.onSurface }]}>
@@ -57,7 +83,7 @@ const UploadTab = ({ uploading, onPickGallery, onCamera, onPaste, onUrlSubmit })
 
                     <View style={styles.uploadGridItem}>
                         <Pressable onPress={onCamera}>
-                            <Card style={styles.uploadCard}>
+                            <Card style={styles.uploadCard} mode="elevated">
                                 <Card.Content style={styles.uploadCardContent}>
                                     <CameraIcon size={32} color={theme.colors.primary} />
                                     <Text style={[styles.uploadCardLabel, { color: theme.colors.onSurface }]}>
@@ -73,7 +99,7 @@ const UploadTab = ({ uploading, onPickGallery, onCamera, onPaste, onUrlSubmit })
 
                     <View style={styles.uploadGridItem}>
                         <Pressable onPress={onPaste}>
-                            <Card style={styles.uploadCard}>
+                            <Card style={styles.uploadCard} mode="elevated">
                                 <Card.Content style={styles.uploadCardContent}>
                                     <ClipboardIcon size={32} color={theme.colors.primary} />
                                     <Text style={[styles.uploadCardLabel, { color: theme.colors.onSurface }]}>
@@ -87,29 +113,7 @@ const UploadTab = ({ uploading, onPickGallery, onCamera, onPaste, onUrlSubmit })
                         </Pressable>
                     </View>
 
-                    <View style={styles.uploadGridItem}>
-                        <Card style={styles.uploadCard}>
-                            <Card.Content style={[styles.uploadCardContent, { paddingVertical: 16, gap: 8 }]}>
-                                <LinkIcon size={28} color={theme.colors.primary} />
-                                <TextInput
-                                    mode="outlined"
-                                    label="Image URL"
-                                    value={remoteUrl}
-                                    onChangeText={setRemoteUrl}
-                                    placeholder="https://…"
-                                    autoCapitalize="none"
-                                    dense
-                                    style={{ width: '100%' }}
-                                    right={
-                                        remoteUrl.trim() ? (
-                                            <TextInput.Icon icon="arrow-right" onPress={handleUrlSubmit} />
-                                        ) : null
-                                    }
-                                    onSubmitEditing={handleUrlSubmit}
-                                />
-                            </Card.Content>
-                        </Card>
-                    </View>
+
                 </View>
             </ScrollView>
         </View>

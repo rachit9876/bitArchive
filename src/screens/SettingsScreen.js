@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Divider,
+  Switch,
   Text,
   TextInput,
   useTheme,
@@ -206,28 +207,26 @@ const SettingsScreen = ({
   return (
     <ScrollView contentContainerStyle={styles.form}>
       {/* ── Safety Blur ── */}
-      <Card style={styles.cardSpacing}>
+      <Card style={styles.cardSpacing} mode="elevated">
         <Card.Title title="Safety Blur" />
         <Card.Content>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text>Blur images in gallery</Text>
-            <Button
-              mode={draft.safetyBlur ? 'contained' : 'outlined'}
-              onPress={async () => {
-                const nextDraft = { ...draft, safetyBlur: !draft.safetyBlur };
+            <Text variant="bodyMedium">Blur images in gallery</Text>
+            <Switch
+              value={Boolean(draft.safetyBlur)}
+              onValueChange={async (val) => {
+                const nextDraft = { ...draft, safetyBlur: val };
                 setDraft(nextDraft);
                 await onUpdate(nextDraft);
               }}
-            >
-              {draft.safetyBlur ? 'On' : 'Off'}
-            </Button>
+            />
           </View>
-          <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
-            When enabled, images in the gallery are blurred until clicked.
+          <Text variant="labelSmall" style={{ opacity: 0.6, marginTop: 4 }}>
+            When enabled, images in the gallery are blurred for privacy.
           </Text>
         </Card.Content>
       </Card>
-      <Card style={styles.cardSpacing}>
+      <Card style={styles.cardSpacing} mode="elevated">
         <Card.Title title="Storage" />
         <Card.Content>
           <View style={{ gap: 4 }}>
@@ -238,7 +237,7 @@ const SettingsScreen = ({
       </Card>
 
       {/* ── Account & Data ── */}
-      <Card style={styles.cardSpacing}>
+      <Card style={styles.cardSpacing} mode="elevated">
         <Card.Title title="Account & Data" />
         <Card.Content style={{ gap: 10 }}>
           <Button
@@ -262,9 +261,10 @@ const SettingsScreen = ({
           <Divider style={{ marginVertical: 4 }} />
 
           <Button
-            mode="outlined"
+            mode="contained"
             icon="delete-forever"
-            textColor={theme.colors.error}
+            buttonColor={theme.colors.errorContainer}
+            textColor={theme.colors.onErrorContainer}
             onPress={confirmDeleteRepo}
             loading={deleting}
             disabled={deleting}
@@ -272,8 +272,8 @@ const SettingsScreen = ({
             Delete Repository
           </Button>
           <Text
+            variant="labelSmall"
             style={{
-              fontSize: 11,
               opacity: 0.5,
               color: theme.colors.onSurface,
             }}
@@ -284,7 +284,7 @@ const SettingsScreen = ({
       </Card>
 
       {/* ── Export / Import ── */}
-      <Card style={styles.cardSpacing}>
+      <Card style={styles.cardSpacing} mode="elevated">
         <Card.Title title="Export / Import" />
         <Card.Content>
           <Button mode="outlined" onPress={exportConfig}>
@@ -309,7 +309,7 @@ const SettingsScreen = ({
       </Card>
 
       {/* ── Config ── */}
-      <Card style={styles.cardSpacing}>
+      <Card style={styles.cardSpacing} mode="elevated">
         <Card.Title title="Configuration" />
         <Card.Content>
           <TextInput
@@ -345,7 +345,7 @@ const SettingsScreen = ({
       </Card>
 
       {/* ── About ── */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card style={{ marginBottom: 24, borderRadius: 16 }} mode="elevated">
         <Card.Title title="About" />
         <Card.Content>
           <Text style={{ opacity: 0.6 }}>Bit Archive v{appConfig.expo.version}</Text>
