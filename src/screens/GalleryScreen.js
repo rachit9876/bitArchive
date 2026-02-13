@@ -1,20 +1,26 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, View } from 'react-native';
+import React, { memo, useCallback } from 'react';
+import { FlatList, Image, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
+import { BlurView } from 'expo-blur';
 import { ImageIcon } from '../components/Icons';
 import styles from '../styles';
 
-const BLUR_IMAGE = require('../../assets/blur.jpeg');
-
 const GridItem = memo(function GridItem({ item, onOpen, shouldBlur }) {
-  const source = shouldBlur ? BLUR_IMAGE : { uri: item.url };
   return (
     <Pressable
       style={styles.gridItem}
       onPress={() => onOpen(item)}
       android_ripple={{ color: 'rgba(255,255,255,0.15)' }}
     >
-      <Image source={source} style={styles.gridImage} />
+      <Image source={{ uri: item.url }} style={styles.gridImage} />
+      {shouldBlur && (
+        <BlurView
+          intensity={100}
+          tint="dark"
+          experimentalBlurMethod="dimezisBlurView"
+          style={StyleSheet.absoluteFill}
+        />
+      )}
     </Pressable>
   );
 });
@@ -22,7 +28,7 @@ const GridItem = memo(function GridItem({ item, onOpen, shouldBlur }) {
 
 const EmptySkeleton = memo(function EmptySkeleton() {
   return (
-    <View style={[styles.grid, { flexDirection: 'row', flexWrap: 'wrap' }]}> 
+    <View style={[styles.grid, { flexDirection: 'row', flexWrap: 'wrap' }]}>
       {Array.from({ length: 9 }).map((_, index) => (
         <View key={`grid-skeleton-${index}`} style={[styles.gridItem, styles.skeleton]} />
       ))}
@@ -32,27 +38,16 @@ const EmptySkeleton = memo(function EmptySkeleton() {
 
 const GalleryScreen = ({ images, refreshing, onRefresh, onOpen, safetyBlur = true }) => {
   const theme = useTheme();
-  const [revealed, setRevealed] = useState({});
-
-  const revealedSet = useMemo(() => revealed, [revealed]);
-
-  const handleOpen = useCallback(
-    item => {
-      setRevealed(prev => ({ ...prev, [item.name]: true }));
-      onOpen(item);
-    },
-    [onOpen]
-  );
 
   const renderItem = useCallback(
     ({ item }) => (
       <GridItem
         item={item}
-        onOpen={handleOpen}
-        shouldBlur={Boolean(safetyBlur) && !revealedSet[item.name]}
+        onOpen={onOpen}
+        shouldBlur={Boolean(safetyBlur)}
       />
     ),
-    [handleOpen, revealedSet, safetyBlur]
+    [onOpen, safetyBlur]
   );
 
   return (

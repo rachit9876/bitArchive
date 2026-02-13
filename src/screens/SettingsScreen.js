@@ -205,42 +205,6 @@ const SettingsScreen = ({
   /* ─── Render ─── */
   return (
     <ScrollView contentContainerStyle={styles.form}>
-      {/* ── Config ── */}
-      <Card style={styles.cardSpacing}>
-        <Card.Title title="Configuration" />
-        <Card.Content>
-          <TextInput
-            label="GitHub Token"
-            mode="outlined"
-            value={draft.token}
-            secureTextEntry
-            onChangeText={token => setDraft(prev => ({ ...prev, token }))}
-            autoCapitalize="none"
-          />
-          <TextInput
-            label="GitHub Repo"
-            mode="outlined"
-            value={draft.repo}
-            onChangeText={repo => setDraft(prev => ({ ...prev, repo }))}
-            autoCapitalize="none"
-            style={styles.topSpacing}
-          />
-          <TextInput
-            label="Base URL (optional)"
-            mode="outlined"
-            value={draft.baseUrl}
-            onChangeText={baseUrl =>
-              setDraft(prev => ({ ...prev, baseUrl }))
-            }
-            autoCapitalize="none"
-            style={styles.topSpacing}
-          />
-          <Button mode="contained" style={styles.topSpacing} onPress={save}>
-            Save Changes
-          </Button>
-        </Card.Content>
-      </Card>
-
       {/* ── Safety Blur ── */}
       <Card style={styles.cardSpacing}>
         <Card.Title title="Safety Blur" />
@@ -340,6 +304,42 @@ const SettingsScreen = ({
             onPress={importConfig}
           >
             Import Configuration
+          </Button>
+        </Card.Content>
+      </Card>
+
+      {/* ── Config ── */}
+      <Card style={styles.cardSpacing}>
+        <Card.Title title="Configuration" />
+        <Card.Content>
+          <TextInput
+            label="GitHub Token"
+            mode="outlined"
+            value={draft.token}
+            secureTextEntry
+            onChangeText={token => setDraft(prev => ({ ...prev, token }))}
+            autoCapitalize="none"
+          />
+          <TextInput
+            label="GitHub Repo"
+            mode="outlined"
+            value={draft.repo}
+            onChangeText={repo => setDraft(prev => ({ ...prev, repo }))}
+            autoCapitalize="none"
+            style={styles.topSpacing}
+          />
+          <TextInput
+            label="Base URL (optional)"
+            mode="outlined"
+            value={draft.baseUrl}
+            onChangeText={baseUrl =>
+              setDraft(prev => ({ ...prev, baseUrl }))
+            }
+            autoCapitalize="none"
+            style={styles.topSpacing}
+          />
+          <Button mode="contained" style={styles.topSpacing} onPress={save}>
+            Save Changes
           </Button>
         </Card.Content>
       </Card>
