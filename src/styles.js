@@ -183,20 +183,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: '45%',
   },
-  /* ---------- Overlay spinner ---------- */
-  uploadOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,13,23,0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    zIndex: 10,
-  },
-  uploadOverlayText: {
-    color: '#EDDCFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
   /* ---------- Image Info in Viewer ---------- */
   imageMetaRow: {
     flexDirection: 'row',

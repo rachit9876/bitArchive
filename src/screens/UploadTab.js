@@ -15,7 +15,7 @@ import {
 } from '../components/Icons';
 import styles from '../styles';
 
-const UploadTab = ({ uploading, onPickGallery, onCamera, onPaste, onUrlSubmit }) => {
+const UploadTab = ({ onPickGallery, onCamera, onPaste, onUrlSubmit }) => {
     const theme = useTheme();
     const [remoteUrl, setRemoteUrl] = useState('');
 
@@ -27,12 +27,7 @@ const UploadTab = ({ uploading, onPickGallery, onCamera, onPaste, onUrlSubmit })
 
     return (
         <View style={{ flex: 1 }}>
-            {uploading && (
-                <View style={styles.uploadOverlay}>
-                    <ActivityIndicator size="large" color="#fff" />
-                    <Text style={styles.uploadOverlayText}>Uploading…</Text>
-                </View>
-            )}
+
 
             <View style={[styles.searchRow, { backgroundColor: theme.colors.background }]}>
                 <View style={[styles.searchPill, { backgroundColor: theme.colors.surfaceVariant }]}>
