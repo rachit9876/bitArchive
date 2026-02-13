@@ -227,6 +227,25 @@ const SettingsScreen = ({
         </Card.Content>
       </Card>
       <Card style={styles.cardSpacing} mode="elevated">
+        <Card.Title title="Security" />
+        <Card.Content>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text variant="bodyMedium">App Lock (Biometric)</Text>
+            <Switch
+              value={Boolean(draft.securityEnabled)}
+              onValueChange={async (val) => {
+                const nextDraft = { ...draft, securityEnabled: val };
+                setDraft(nextDraft);
+                await onUpdate(nextDraft);
+              }}
+            />
+          </View>
+          <Text variant="labelSmall" style={{ opacity: 0.6, marginTop: 4 }}>
+            Require fingerprint/face unlock when opening the app.
+          </Text>
+        </Card.Content>
+      </Card>
+      <Card style={styles.cardSpacing} mode="elevated">
         <Card.Title title="Storage" />
         <Card.Content>
           <View style={{ gap: 4 }}>

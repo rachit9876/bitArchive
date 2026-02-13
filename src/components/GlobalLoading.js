@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { ActivityIndicator, Text, Modal, useTheme } from 'react-native-paper';
+import { View, StyleSheet, Modal } from 'react-native';
+import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import { useUIFeedback } from '../contexts/UIFeedbackContext';
 
 const GlobalLoading = () => {
@@ -12,14 +12,21 @@ const GlobalLoading = () => {
     const message = typeof loading === 'string' ? loading : 'Loading...';
 
     return (
-        <Modal visible={true} dismissable={false} contentContainerStyle={styles.container}>
-            <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
-                <ActivityIndicator animating={true} size="large" color={theme.colors.primary} />
-                {message ? (
-                    <Text variant="bodyLarge" style={[styles.text, { color: theme.colors.onSurface }]}>
-                        {message}
-                    </Text>
-                ) : null}
+        <Modal
+            transparent={true}
+            visible={true}
+            animationType="fade"
+            onRequestClose={() => { }} // Block back button
+        >
+            <View style={styles.container}>
+                <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
+                    <ActivityIndicator animating={true} size="large" color={theme.colors.primary} />
+                    {message ? (
+                        <Text variant="bodyLarge" style={[styles.text, { color: theme.colors.onSurface }]}>
+                            {message}
+                        </Text>
+                    ) : null}
+                </View>
             </View>
         </Modal>
     );

@@ -62,6 +62,7 @@ import styles from './styles';
 import { useUIFeedback } from './contexts/UIFeedbackContext';
 import GlobalLoading from './components/GlobalLoading';
 import GlobalNotification from './components/GlobalNotification';
+import BiometricAuth from './components/BiometricAuth';
 
 /* ─── Material 3 Expressive — Lavender ──────────────────── */
 
@@ -195,9 +196,10 @@ export default function Main() {
     } = useConfigStorage();
 
     // Use Global Feedback
-    const { showLoading, hideLoading, showMessage } = useUIFeedback();
+    const { showLoading, hideLoading, showMessage, loading } = useUIFeedback();
 
     const [config, setConfig] = useState(null);
+    const [isLocked, setIsLocked] = useState(false);
     const [screen, setScreen] = useState('gallery');
     const [showUrlDialog, setShowUrlDialog] = useState(false);
     const [remoteUrl, setRemoteUrl] = useState('');
@@ -598,6 +600,9 @@ export default function Main() {
             try {
                 const stored = await loadConfig();
                 if (stored) {
+                    if (stored.securityEnabled) {
+                        setIsLocked(true);
+                    }
                     setConfig({ ...initialConfig, ...stored });
                 }
             } finally {
@@ -1021,6 +1026,11 @@ export default function Main() {
                             <GlobalNotification />
                         </Modal>
 
+                        <BiometricAuth
+                            visible={isLocked}
+                            onAuthenticate={() => setIsLocked(false)}
+                            autoPrompt={!loading}
+                        />
                         <GlobalLoading />
                         <GlobalNotification />
                     </SafeAreaView>
